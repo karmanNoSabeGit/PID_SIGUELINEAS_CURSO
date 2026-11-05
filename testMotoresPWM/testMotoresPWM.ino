@@ -34,7 +34,7 @@ void loop() {
   moverMotorIzquierdo(0);
   delay(interval*2);
 
-  /*
+  
   //FASE 2 DERECHO -> WORKS
   moverMotorDerecho(255);
   moverMotorIzquierdo(0);
@@ -57,15 +57,17 @@ void loop() {
   
   moverMotorDerecho(0);
   moverMotorIzquierdo(0);
-  delay(interval*2);*/
+  delay(interval*2);
 
-  //FASE 4 DETRÁS -> this is where the fun begins
-
+  /*//FASE 4 DETRÁS -> this is where the fun begins
+    //NO TIRAR HACIA ATRÁS
   moverMotorIzquierdo(-255);
   delay(interval);
 
   moverMotorIzquierdo(0);
-  delay(interval*2);
+  delay(interval*2); */
+
+  
   /*
   // FASE 1: IZQUIERDO
   moverMotorIzquierdo(255);

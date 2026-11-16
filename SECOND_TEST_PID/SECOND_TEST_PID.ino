@@ -1,3 +1,14 @@
+/*
+ * El robot tiene pesos que, como máximo, alteran 24 unidades
+ * Si el valor de la kP es pequeño, como 1 o 2,5; entonces 
+ * la alteración máxima que puede hacer el PID es de apenas 
+ * 25 o 50 unidades de PWM. El robot trabaja con un PWM que va
+ * desde 0 a 255 pulsos, con el valor de trabajo entre 150 y 255, aprox
+ * Matemáticamente, una kP de alrededor de 10 es la más ópitima
+ * porque 255/24 (rango de posibilidades/modificación cada vez) ~= 10
+ * 
+ * Si queremos una kP de ~1, entonces los pesos se deben multiplicar por 10
+*/
 // Pines del ADC1 recomendados en ESP32
 int PINES[6] = {36, 39, 32, 33, 34, 35}; // VP 36, VN 39
 
@@ -25,8 +36,8 @@ int32_t error = 0;
 int32_t prev_error = 0;
 int valor_velocidad = 0;
 
-int kD = 0;
-int kP = 30;
+int kD = 1;
+int kP = 15;
 
 // Prototipos de funciones
 void leerLinea();
@@ -120,9 +131,7 @@ void mostrarvalor_sensores(int32_t errorActual, int correctVal) {
   }
   Serial.println();
 
-  Serial.print("Error: ");
-  Serial.println(errorActual);
-  Serial.println();
+  
 
   Serial.print("Lecturas: ");
   for (int w = 0; w < 6; w++) {
@@ -130,9 +139,25 @@ void mostrarvalor_sensores(int32_t errorActual, int correctVal) {
     Serial.print(" ");
   }
   Serial.println();
-
-  Serial.print("CorrectVal: ");
+  
+  Serial.print("Error: ");
+  Serial.println(errorActual);
+  Serial.println();
+  
+  Serial.print("CorrectVal (se suma o resta a la velocidad base: ");
   Serial.println(correctVal);
+  Serial.println();
+
+  int velMotIzq = VEL_BASE + correctVal;
+  int velMotDer = VEL_BASE - correctVal;
+
+  velMotIzq = constrain(velMotIzq, -255, 255);
+  velMotDer = constrain(velMotDer, -255, 255);
+
+  Serial.print("velMotIzq: ");
+  Serial.print(velMotIzq);
+  Serial.print("  velMotDer: ");
+  Serial.println(velMotDer);
   Serial.println();
 }
 

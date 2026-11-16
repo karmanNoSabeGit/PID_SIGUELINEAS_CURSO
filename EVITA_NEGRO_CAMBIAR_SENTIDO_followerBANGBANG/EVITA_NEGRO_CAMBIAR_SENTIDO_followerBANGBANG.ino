@@ -18,7 +18,6 @@ unsigned long prev_millis = 0; // Corrección 1: Tipo sin signo para prevenir ov
 int change_dir_interval = 1000;
 int printout_interval = 1000;
 
-bool cambiarDireccion(bool dir);
 void moverMotorIzquierdo(int velocidad);
 void moverMotorDerecho(int velocidad);
 
@@ -40,20 +39,12 @@ void loop() {
   val_izd = analogRead(s_izd);
 
   prev_state = state;
-  if (val_der >= umbral) {
-    if (!change_dir) {
+  if (val_der <= umbral) {
       state = 1;
-    } else {
+      prev_millis = current_millis; // Corrección 3: Marca de tiempo sin riesgo de overflow
+  } else if (val_izd <= umbral) { 
       state = 2;
-    }
-    prev_millis = current_millis; // Corrección 3: Marca de tiempo sin riesgo de overflow
-  } else if (val_izd >= umbral) { 
-    if (!change_dir) {
-      state = 2;
-    } else {
-      state = 1;
-    }
-    prev_millis = current_millis; // Corrección 3: Marca de tiempo sin riesgo de overflow
+      prev_millis = current_millis; // Corrección 3: Marca de tiempo sin riesgo de overflow
   } 
 
   if (prev_state != state){
@@ -122,10 +113,7 @@ void moverMotorDerecho(int velocidad) {
   } else {
     digitalWrite(IN3, LOW);
     analogWrite(IN4, velocidad * -1);
-  }
+  } 
 }
 
 // Corrección 7: Inversión lógica pura con retorno explícito
-bool cambiarDireccion(bool dir) {
-  return !dir;
-}

@@ -10,6 +10,7 @@ En proceso todavía.
 Tareas pendientes:
 
 -Ajustar mejor los valores kP, kD via wifi/bt
+
 -Añadir telemetría que se transmita via Wifi/bt
 
 -Documentar bien los códigos para que los alumnos lo entiendan

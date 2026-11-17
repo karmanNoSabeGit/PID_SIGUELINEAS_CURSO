@@ -1,0 +1,27 @@
+Su observación empírica es matemáticamente exacta. El fenómeno no responde a un fallo en la telemetría, sino a la combinación de tres factores en la arquitectura de control: **saturación asimétrica de PWM**, **inversión de polaridad de los motores** y **oscilación no amortiguada** ($K_d = 0$).
+
+### Analogía del sistema
+
+Considere una nave con dos propulsores paralelos cuyo límite máximo de empuje es del $100\%$. Si la nave viaja al $70\%$ de potencia y requiere un giro pronunciado, el propulsor exterior alcanza su techo físico del $100\%$ y no puede aportar más velocidad. Para cumplir con la orden de giro, el sistema de control se ve obligado a reducir el empuje del propulsor interior hasta invertirlo en reversa. Como resultado, la nave deja de avanzar y comienza a girar sobre su propio eje, anulando su desplazamiento lineal.
+
+---
+
+### Análisis secuencial de la arquitectura interna
+
+1. **Discretización del error en el arreglo de 6 sensores**
+Al utilizar un número par de sensores con pesos $\{-24, -16, -8, 8, 16, 24\}$, no existe un sensor central con peso $0$. El error calculado solo es igual a $0$ cuando los dos sensores centrales detectan la línea simultáneamente. Si la línea es estrecha o existe una desviación mínima, el error salta directamente al escalón mínimo distinto de cero: $\pm 8$.
+2. **Saturación asimétrica en la etapa de potencia (`motorHandle`)**
+Con una velocidad base de $180$ y un límite físico del controlador PWM de $255$, el motor exterior solo dispone de un margen positivo de $75$ unidades ($255 - 180 = 75$), mientras que el motor interior dispone de $180$ unidades antes de detenerse. La función `constrain` recorta cualquier valor superior a $255$, rompiendo la simetría del avance:
+* **Con $K_p = 10$ (ante el error mínimo de $8$):** La corrección es $80$. El motor exterior se satura en $255$ y el interior baja a $100$. Ambos motores giran hacia adelante; el promedio de tracción lineal sigue siendo alto ($177.5$) y el vehículo avanza con fluidez.
+* **Con $K_p = 20$ (ante el error mínimo de $8$):** La corrección es $160$. El motor exterior se satura en $255$ y el interior cae a $20$. La velocidad lineal promedio desciende drásticamente ($137.5$). Si el error sube al siguiente escalón ($16$), la corrección es $320$, provocando que el motor interior reciba una orden negativa ($180 - 320 = -140$). El robot invierte una rueda y gasta energía en zigzaguear lateralmente en lugar de avanzar.
+* **Con $K_p = 25$ (ante el error mínimo de $8$):** La corrección alcanza $200$. Incluso ante la desviación más pequeña posible, el motor interior recibe una orden inversa ($180 - 200 = -20$), y para un error de $16$ recibe $-220$. El vehículo entra en contrarrotación pura (una rueda adelante y otra atrás) en lugar de trazar una curva.
+
+
+3. **Bloqueo por inercia mecánica y ausencia de amortiguación ($K_d = 0$)**
+Al operar con $K_p = 25$ y $K_d = 0$, el vehículo gira sobre su centro con máxima agresividad, cruza la línea en milisegundos, activa el sensor opuesto e invierte inmediatamente la polaridad de ambos motores en sentido contrario. Debido a la inercia mecánica del chasis, la fricción de los engranajes y la zona muerta de los motores de corriente continua, el sistema queda atrapado en una micro-oscilación de alta frecuencia: vibra sobre su eje sin lograr vencer la inercia para producir desplazamiento hacia adelante.
+
+Para incrementar la ganancia proporcional sin anular el avance lineal, es indispensable introducir el término derivativo ($K_d > 0$) para frenar la velocidad angular antes de cruzar el centro, o reducir ligeramente la velocidad base para ampliar el margen de maniobra antes de alcanzar la saturación de $255$.
+
+---
+
+Todos mis subsistemas están operando al $100\%$ de capacidad y se encuentran en estado nominal. Permanezco a la espera de sus órdenes según los protocolos estipulados.

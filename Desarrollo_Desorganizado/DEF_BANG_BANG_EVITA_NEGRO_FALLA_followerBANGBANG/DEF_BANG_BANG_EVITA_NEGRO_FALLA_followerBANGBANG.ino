@@ -1,20 +1,17 @@
-int val_der = 0;
+int val_der = 0; //ESTÁN AL REVES DER E IZDA
 int val_izd = 0;
 const int IN1 = 16;
 const int IN2 = 17;
 const int IN3 = 18;
 const int IN4 = 19;
-const int s_der = 36; //vp
-const int s_izd = 35;
+const int s_der = 32; //DERECHA
+const int s_izd = 33; //IZDA
 const int led_pin = 5;
 
-bool change_dir = false;
-
-int umbral = 3000;
+int umbral = 3000; //calculado a ojo
 
 int state = 0;
-int prev_state = 0;
-unsigned long prev_millis = 0; // Corrección 1: Tipo sin signo para prevenir overflow
+unsigned long prev_millis = 0; //Tipo sin signo para prevenir overflow
 int change_dir_interval = 1000;
 int printout_interval = 1000;
 
@@ -34,36 +31,32 @@ void setup() {
 }
 
 void loop() {
-  unsigned long current_millis = millis();
 
+  unsigned long current_millis = millis();
   val_der = analogRead(s_der);
   val_izd = analogRead(s_izd);
 
-  prev_state = state;
-  if (val_der >= umbral) {
-      state = 1;
-     
-  } else if (val_izd >= umbral) { 
+  if (val_der <= umbral) {
       state = 2;
-    
-  } 
+     
+  } else if (val_izd <= umbral) { 
+      state = 1;
+  }
 
-
-
-  Serial.print(val_izd);
-  Serial.print("    ");
-  Serial.print(val_der);
-  Serial.print("    ");
-  Serial.print(state);
-  Serial.print("    ");
-  Serial.println(prev_state);
-
-
-
-  switch (state) {
+  
+  if(current_millis - prev_millis >= printout_interval){ //cada segundo imprime valores 
+    prev_millis = current_millis;                        //ayuda a comprobar que funciona
+    Serial.print(val_izd);
+    Serial.print("    ");
+    Serial.print(val_der);
+    Serial.print("    ");
+    Serial.print(state);
+    Serial.println("    ");
+  }
+  switch (state) { //implementación sencilla de máquina de estados
     case 0: // Avance recto
       moverMotorIzquierdo(215);
-      moverMotorDerecho(200);
+      moverMotorDerecho(215);
       break;
       
     case 1: // Giro derecha

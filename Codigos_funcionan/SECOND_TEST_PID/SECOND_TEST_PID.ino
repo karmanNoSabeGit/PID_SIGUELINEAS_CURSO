@@ -154,11 +154,11 @@ void mostrarvalor_sensores(int32_t errorActual, int correctVal) {
   velMotIzq = constrain(velMotIzq, -255, 255);
   velMotDer = constrain(velMotDer, -255, 255);
 
-  Serial.print("velMotIzq: ");
+  /*Serial.print("velMotIzq: ");
   Serial.print(velMotIzq);
   Serial.print("  velMotDer: ");
   Serial.println(velMotDer);
-  Serial.println();
+  Serial.println();*/
 }
 
 int32_t calcularError() {

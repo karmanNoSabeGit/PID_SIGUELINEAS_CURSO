@@ -1,4 +1,4 @@
-// Pines del ADC1 recomendados en ESP32
+  // Pines del ADC1 recomendados en ESP32
 int PINES[6] = {36, 39, 32, 33, 34, 35}; // VP 36, VN 39
 
 // Pines del Driver DRV8833
@@ -16,7 +16,6 @@ int minimos[6] = {4095, 4095, 4095, 4095, 4095, 4095};
 
 int32_t pesos[6] = {-24, -16, -8, 8, 16, 24};
 int valores_lecturas[6];
-bool resultado[6];
 
 // Temporizadores no bloqueantes
 unsigned long prevControlMillis = 0;
@@ -124,25 +123,24 @@ void leerLinea() {
     int estado = analogRead(PINES[i]);
     valores_lecturas[i] = estado;
     int umbral = minimos[i] + ((maximos[i] - minimos[i]) / 2);
-    resultado[i] = (estado > umbral) ? 1 : 0;
   }
 }
 
 int32_t calcularError() {
   int32_t sumaResultadosPesados = 0;
-  int sensoresActivos = 0;
+  int32_t lecturasSensores = 0;
 
   for (int i = 0; i < 6; i++) {
-    sumaResultadosPesados += resultado[i] * pesos[i];
-    sensoresActivos += resultado[i];
+    sumaResultadosPesados += valores_lecturas[i] * pesos[i];
+    lecturasSensores += valores_lecturas[i];
   }
 
   // Si se pierde la línea, conserva el último error conocido
-  if (sensoresActivos == 0) {
+  if (lecturasSensores   == 0) {
     return prev_error;
   }
 
-  return (sumaResultadosPesados / sensoresActivos);
+  return (sumaResultadosPesados / lecturasSensores);
 }
 
 int32_t PIDControl(int32_t errorTotal, int32_t errorPrevio) {

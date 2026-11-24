@@ -153,12 +153,12 @@ float calcularError() {
 
   // Detección real de esquina de 90° (tapa extremo + intermedio + centro a la vez)
   // Si solo pisa el extremo al rebotar de una curva, NO entra aquí y usa el PID suave
-  if (lectura_normalizada[0] > 700 && lectura_normalizada[1] > 500 && lectura_normalizada[2] > 400) {
+  /* if (lectura_normalizada[0] > 700 && lectura_normalizada[1] > 500 && lectura_normalizada[2] > 400) {
     return -100.0;
   } 
   if (lectura_normalizada[5] > 700 && lectura_normalizada[4] > 500 && lectura_normalizada[3] > 400) {
     return 100.0;
-  }
+  } */
 
   // Filtro de pérdida de línea: si se sale del todo, mantiene el giro máximo hacia el último lado
   if (sumaIntensidades < 250.0) {

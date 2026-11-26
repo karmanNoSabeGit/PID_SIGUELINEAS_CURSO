@@ -8,7 +8,8 @@ const int IN3 = 18; // Motor Derecho Adelante
 const int IN4 = 19; // Motor Derecho Atrás
 
 // Velocidad base modifiable en caliente (usa v0 en el monitor serie para pruebas en mesa)
-int velBase = 180;
+int velBase = 207; //error maximo == 48. La velocidad máxima del motor con corrección 
+                   // máxima es 255-48= 207
 
 // Calibración ADC de 12 bits (0-4095)
 int maximos[6] = {0, 0, 0, 0, 0, 0};
@@ -26,20 +27,24 @@ const unsigned long INTERVALO_TELEMETRIA = 35;  // Gráfica cada 35 ms (~28 FPS)
 
 // Variables de control y telemetría
 int32_t error = 0;
+long error_integral = 0;
 int32_t prev_error = 0;
 int32_t propoError = 0;
 int32_t derivError = 0;
+int32_t integError = 0;
 int32_t valor_velocidad = 0;
 int velMotIzq = 0;
 int velMotDer = 0;
 
 // Constantes PID en coma flotante para permitir ajustes finos
-float kP = 9.5 ;
-float kD = 1.0;
+float kP = 10;
+float kD = 6;
+float kI = 0.05;
 
 // Prototipos de funciones
 void leerLinea();
-int32_t calcularError();
+int32_t 
+Error();
 int32_t PIDControl(int32_t errorTotal, int32_t errorPrevio);
 void motorHandle(int32_t correctVal);
 void moverMotorIzquierdo(int velocidad);
@@ -131,29 +136,48 @@ void leerLinea() {
 int32_t calcularError() {
   int32_t sumaResultadosPesados = 0;
   int sensoresActivos = 0;
+  int anguloDerecha = 0;
+  int anguloIzquierda = 0;
 
+  
   for (int i = 0; i < 6; i++) {
     sumaResultadosPesados += resultado[i] * pesos[i];
     sensoresActivos += resultado[i];
+    
+    if (i<4 && resultado[i] == 1){ //comprobación de esquina
+      anguloDerecha++;
+    } 
+
+    if (i>1 && resultado[i] == 1){
+      anguloIzquierda++;
+    }
+
+    if (anguloDerecha == 4 && anguloIzquierda < 4) {
+      return -48; //48 es el error máximo
+    } else if (anguloIzquierda == 4 && anguloDerecha < 4) {
+      return 48;// para que gire al otro lado
+    }
+      
   }
 
   // Si se pierde la línea, conserva el último error conocido
   if (sensoresActivos == 0) {
     return prev_error;
   }
-
   return (sumaResultadosPesados / sensoresActivos);
 }
 
 int32_t PIDControl(int32_t errorTotal, int32_t errorPrevio) {
   propoError = kP * errorTotal;
   derivError = kD * (errorTotal - errorPrevio);
-  return (propoError + derivError);
+  integError += kI * (errorTotal);
+  
+  return (propoError + derivError+integError);
 }
 
 void motorHandle(int32_t correctVal) {
-  velMotIzq = constrain(velBase + correctVal, -255, 255);
-  velMotDer = constrain(velBase - correctVal, -255, 255);
+  velMotIzq = constrain(velBase + correctVal, 0, 255);
+  velMotDer = constrain(velBase - correctVal, 0, 255);
 
   moverMotorIzquierdo(velMotIzq);
   moverMotorDerecho(velMotDer);
@@ -168,6 +192,8 @@ void enviarTelemetriaPlotter() {
   Serial.print(propoError);
   Serial.print(",D:");
   Serial.print(derivError);
+  Serial.print(",I:");
+  Serial.print(integError);
   Serial.print(",MotIzq:");
   Serial.print(velMotIzq);
   Serial.print(",MotDer:");
@@ -187,11 +213,13 @@ void leerComandosSerial() {
       kP = Serial.parseFloat();
     } else if (cmd == 'd') {
       kD = Serial.parseFloat();
+    } else if (cmd == 'i') { 
+      kI = Serial.parseFloat();
     } else if (cmd == 'v') {
       velBase = constrain(Serial.parseInt(), 0, 255);
     } else if (cmd == 'r') {
       velBase = 0;
-    }
+    } 
 
     // Limpiar el resto de caracteres hasta el salto de línea
     while (Serial.available() > 0 && Serial.read() != '\n') {}
